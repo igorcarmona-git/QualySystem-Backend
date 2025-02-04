@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  user         String        @unique
+  senha        String
+  email        String?       @unique
+  telefone     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  id_diretoria Int?          @unique
+  notificacoes Notificacao[]
+  setores      Setores[]
+  diretoria    Diretoria?    @relation(fields: [id_diretoria], references: [id])
+}
+
+model Notificacao {
+  id                    Int                @id @default(autoincrement())
+  usuario_responsavelId Int
+  id_evento             Int
+  dt_ocorrencia         DateTime
+  hr_ocorrencia         String
+  nomePaciente          String
+  sexo                  String
+  raca_cor              String?
+  idade                 Int?
+  dt_internacao         DateTime?
+  status                Int
+  id_tarefa             Int
+  id_setor_notificante  Int
+  id_setor_notificado   Int
+  diagnostico           String
+  registro              Int
+  grau_dano             String
+  titulo                String
+  descricao             String
+  envolvimento          Boolean
+  anonimato             Boolean
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  AnaliseCausaRaiz      AnaliseCausaRaiz[]
+  evento                Evento             @relation(fields: [id_evento], references: [id])
+  setorNotificado       Setores            @relation("SetorNotificado", fields: [id_setor_notificado], references: [id])
+  setorNotificante      Setores            @relation("SetorNotificante", fields: [id_setor_notificante], references: [id])
+  usuario               Usuario            @relation(fields: [usuario_responsavelId], references: [id])
+  tarefa                Tarefa?
+}
+
+model Evento {
+  id           Int           @id @default(autoincrement())
+  titulo       String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  notificacoes Notificacao[]
+}
+
+model Setores {
+  id              Int           @id @default(autoincrement())
+  descricao       String
+  id_usuario_resp Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  notificado      Notificacao[] @relation("SetorNotificado")
+  notificante     Notificacao[] @relation("SetorNotificante")
+  usuario         Usuario       @relation(fields: [id_usuario_resp], references: [id])
+}
+
+model Diretoria {
+  id              Int      @id @default(autoincrement())
+  descricao       String
+  id_usuario_resp Int      @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  usuario         Usuario?
+}
+
+model Tarefa {
+  id             Int         @id @default(autoincrement())
+  descricao      String
+  dt_criacao     DateTime
+  dt_venc        DateTime
+  id_notificacao Int         @unique
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  notificacao    Notificacao @relation(fields: [id_notificacao], references: [id])
+}
+
+model AnaliseCausaRaiz {
+  id                         Int         @id @default(autoincrement())
+  id_notificacao             Int
+  discussaoMultiprofissional String
+  investigacaoRealizada      String
+  maoObra                    String
+  maquina                    String
+  meioAmbiente               String
+  material                   String
+  medida                     String
+  metodo                     String
+  id_planoAcao               Int?
+  createdAt                  DateTime    @default(now())
+  updatedAt                  DateTime    @updatedAt
+  notificacao                Notificacao @relation(fields: [id_notificacao], references: [id], map: "fk_analise_notificacao")
+  planoAcao                  PlanoAcao?  @relation(fields: [id_planoAcao], references: [id], map: "fk_analise_planoAcao")
+}
+
+model PlanoAcao {
+  id               Int                @id @default(autoincrement())
+  oQue             String
+  porQue           String
+  onde             String
+  quem             String
+  quando           String
+  como             String
+  quanto           String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  AnaliseCausaRaiz AnaliseCausaRaiz[]
+}
