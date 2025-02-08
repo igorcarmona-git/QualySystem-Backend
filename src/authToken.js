@@ -1,31 +1,45 @@
 const jsonwebtoken = require("jsonwebtoken");
 
-exports.tokenValited = async (req, resp, next) => {
+exports.tokenValidated = async (req, res, next) => {
     try {
-        if (!req.headers.authorization) {
-            return resp.status(401).send('Acesso negado! Não existe token de autenticação');
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader) {
+            return res.status(401).json({ message: "Acesso negado! Token de autenticação ausente." });
         }
 
-        const [token] = req.headers.authorization.split(' ') || [''];
+        // Verifica se o token segue o padrão 'Bearer token_aqui'
+        const [scheme, token] = authHeader.split(' ');
 
-        if (!token) {
-            return resp.status(401).send('Acesso negado! Token não encontrado');
+        if (scheme !== "Bearer" || !token) {
+            return res.status(401).json({ message: "Acesso negado! Token mal formatado." });
         }
 
-        // Verifica o token usando a chave privada
+        if (!process.env.PRIVATE_KEY) {
+            console.error("Erro: Chave privada não configurada.");
+            return res.status(500).json({ message: "Erro interno do servidor." });
+        }
+
+        // Verifica o token e extrai o payload
         const payload = jsonwebtoken.verify(token, process.env.PRIVATE_KEY);
-        console.log('Payload decodificado:', payload);
+        console.log("Payload decodificado:", payload);
 
-        // Verifica se o token contém um usuário válido
+        // Garante que o token tenha um usuário válido
         if (!payload.user) {
-            return resp.status(401).json({ message: "Token inválido" });
+            return res.status(401).json({ message: "Token inválido! Usuário não encontrado." });
         }
 
-        req.headers['user'] = payload.user;
+        // Anexa o usuário ao objeto `req`
+        req.user = payload.user;
 
         next();
     } catch (error) {
-        console.error('Erro ao validar token:', error);
-        return resp.status(401).json({ message: 'Token inválido!' });
+        console.error("Erro ao validar token:", error);
+
+        if (error instanceof jsonwebtoken.JsonWebTokenError) {
+            return res.status(401).json({ message: "Token inválido ou expirado!" });
+        }
+
+        return res.status(500).json({ message: "Erro interno ao validar o token." });
     }
 };

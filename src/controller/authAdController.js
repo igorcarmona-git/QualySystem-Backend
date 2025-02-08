@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const ad = require("../config/activeDirectory.js");
 const prisma = new PrismaClient();
 
-exports.user_authenticate = async (req, res) => {
+exports.userAuthenticate = async (req, res) => {
     const { user, pass, domain } = req.body;
     
     const userDomain = domain && domain.trim() !== "" ? domain : null;
